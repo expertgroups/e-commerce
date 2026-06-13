@@ -1,0 +1,104 @@
+version: '3.8'
+
+services:
+  # PostgreSQL - پایگاه داده اصلی (Fighter Domain)
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: lashkar_admin
+      POSTGRES_PASSWORD: secure_password_123
+      POSTGRES_DB: lashkar27_core
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - lashkar_net
+
+  # Apache Kafka - bus رویدادها
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    networks:
+      - lashkar_net
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - lashkar_net
+
+  # Neo4j - گراف دانش
+  neo4j:
+    image: neo4j:5.21-enterprise
+    environment:
+      NEO4J_AUTH: neo4j/secure_password_123
+      NEO4J_PLUGINS: '["apoc"]'
+    volumes:
+      - neo4j_data:/data
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    networks:
+      - lashkar_net
+
+  # MinIO - ذخیره‌سازی اسناد
+  minio:
+    image: minio/minio:RELEASE.2024-10-02T17-50-41Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minio_admin
+      MINIO_ROOT_PASSWORD: secure_password_123
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    networks:
+      - lashkar_net
+
+  # Redis - کش و صف‌ها
+  redis:
+    image: redis:7.4-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - lashkar_net
+
+  # Fighter Service (Backend)
+  fighter-service:
+    build: ./services/fighter-service
+    command: uvicorn app.api.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./services/fighter-service:/app
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://lashkar_admin:secure_password_123@postgres:5432/lashkar27_core
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - postgres
+      - kafka
+    networks:
+      - lashkar_net
+
+volumes:
+  pg_data:
+  neo4j_data:
+  minio_data:
+
+networks:
+  lashkar_net:
+    driver: bridge
