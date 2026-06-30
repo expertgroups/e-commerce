@@ -1,5 +1,57 @@
-(docs/SOFTWARE_ENGINEERING_REPORT.md is a source/config file, and there are no build artifacts, dependencies, or temp files in the changes)
+```
+# Dependencies
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+.venv.bak/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+*.pot
+*.pyc
+*.pyo
+*.pyd
+.MF
+tags
+TAGS
+maint/coverage/
+htmlcov/
+.hypothesis/
+.coverage*
+.pytest_cache/
+.mypy_cache/
 
-```markdown
+# Environment
+.env
+.env.local
+.env.*
 
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Icon?
 ```
